@@ -2,10 +2,10 @@
 
 import pygame
 import string
-import random
 import csv
 import os
 import sys
+import random
 from timeit import default_timer as timer
 
 # Constants
@@ -94,7 +94,6 @@ class Input:
         self.surface.blit(text, (self.x - 200, self.y + 180))
 
     def draw_input(self, correct):
-        """Draw user input"""
         while True:
             event = pygame.event.poll()
             if event.type == pygame.KEYDOWN:
@@ -111,6 +110,7 @@ class Input:
                 self.prev_n_incorrect = self.n_incorrect_words
                 self.n_correct_words = 0
                 self.n_incorrect_words = 0
+                self.current_string = []
                 if self.x - (button_width / 2) <= event.pos[0] <= \
                    self.x + (button_width / 2) and \
                    self.y + 100 <= event.pos[1] <= self.y + 100 + \
@@ -294,8 +294,8 @@ class Main:
                 self.wait.waiter(time=wait_time)
 
         screen.fill(background_color)
-        clock.tick(60)
-        
+        clock.tick(fps)
+
     def write_data(self, number, filename=None):
         if filename is None:
             filename = str(self.subjectID) + "_scrabble_pretest" + ".txt"
@@ -320,7 +320,7 @@ if __name__ == '__main__':
         condition = random.choice(("c", "d"))
     else:
         condition = sys.argv[2]
-    
+
     # Read letter set file
     stimulus_set = []
     with open('lettersets_pretest.csv', 'rb') as csvfile:
@@ -337,5 +337,5 @@ if __name__ == '__main__':
     for i in range(len(correct_words)):
         correct_words[i] = correct_words[i].split(',')
 
-    run = Main(stimulus_set, correct_words)
+    run = Main(stimulus_set, correct_words, subject_ID, condition)
     run.main()
