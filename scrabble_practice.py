@@ -108,7 +108,7 @@ class Input:
                 elif event.key == pygame.K_RETURN:
                     self.checker(string.join(self.current_string, ""),
                                  correct)
-                    if self.n_correct_words >= 1:
+                    if self.n_correct_words >= 5:
                         break
                     self.current_string = []
                 elif event.key <= 127:
@@ -224,7 +224,7 @@ class Button:
         self.y = surface.get_height() / 2
         self.font = pygame.font.Font(None, 30)
 
-    def next_set(self):
+    def stop_practice(self):
         pygame.draw.rect(self.surface, button_back_color,
                          ((self.x - (button_width / 2)), self.y + 100,
                           button_width, button_height), 0)
@@ -265,6 +265,7 @@ class Main:
         # Main loop
         self.start = timer()
         clock = pygame.time.Clock()
+        # Images should be in an 'images' folder
         image_intro01 = pygame.image.load(os.path.join("images", "intro_scrabble_practice01.jpg")).convert()
         image_intro02 = pygame.image.load(os.path.join("images", "intro_scrabble_practice02.jpg")).convert()
         self.begin = timer()
