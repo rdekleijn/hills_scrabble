@@ -2,9 +2,9 @@
 
 import pygame
 import string
-import random
-import csv
 import os
+import sys
+import random
 from timeit import default_timer as timer
 
 # Constants
@@ -18,7 +18,7 @@ button_back_color = (200, 200, 200)
 button_text_color = (40, 40, 40)
 incorrect_color = (255, 0, 40)
 correct_color = (50, 255, 0)
-counter_text_color = (150, 150, 150)
+counter_text_color = (50, 50, 50)
 box_width = 250
 box_height = 60
 button_width = 150
@@ -31,7 +31,7 @@ screen = pygame.display.set_mode((screen_w, screen_h), pygame.HWSURFACE |
 
 # Variables
 stimulus_set = []
-correct_words = []  
+correct_words = []
 
 
 class Stimulus:
@@ -67,7 +67,7 @@ class Input:
         self.n_repeat_words = 0
         self.font = pygame.font.Font(None, 50)
         self.font_feedback = pygame.font.Font(None, 40)
-        self.font_counter = pygame.font.Font(None, 25)
+        self.font_counter = pygame.font.Font(None, 20)
 
     def draw_text_box(self, message):
         pygame.draw.rect(self.surface, box_back_color,
@@ -241,13 +241,13 @@ class Main:
         # Init data collection
         self.subjectID = subjectID
         self.condition = condition
-        
+
         filename = str(self.subjectID) + "_scrabble_practice" + ".txt"
         f = open(filename, 'w')
         output = 'subjectID,condition,time_start,time_end\n'
         f.write(output)
         f.close()
-        
+
         # Init task
         pygame.init()
         self.surface = screen
@@ -255,7 +255,7 @@ class Main:
         self.letters = letters
         self.word = words
 
-        # Initiate objects
+        # Init objects
         self.stimulus = Stimulus(screen)
         self.user_input = Input(screen)
         self.wait = Wait(screen)
@@ -265,7 +265,6 @@ class Main:
         # Main loop
         self.start = timer()
         clock = pygame.time.Clock()
-        # Images should be in an 'images' folder
         image_intro01 = pygame.image.load(os.path.join("images", "intro_scrabble_practice01.jpg")).convert()
         image_intro02 = pygame.image.load(os.path.join("images", "intro_scrabble_practice02.jpg")).convert()
         self.begin = timer()
@@ -300,6 +299,6 @@ if __name__ == '__main__':
 
     stimulus_set = "K R I M E S"
     correct_words = ["mier","merk","kermis"]
-    
+
     run = Main(stimulus_set, correct_words, subject_ID, condition)
     run.main()
