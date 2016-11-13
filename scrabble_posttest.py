@@ -5,6 +5,7 @@ import string
 import random
 import csv
 import os
+import sys
 from timeit import default_timer as timer
 
 # Constants
@@ -27,12 +28,8 @@ screen_w = 640
 screen_h = 500
 fps = 60
 screen = pygame.display.set_mode((screen_w, screen_h), pygame.HWSURFACE |
-                                 pygame.DOUBLEBUF)
-wait_time = 1000
-
-# Variables
-stimulus_set = []
-correct_words = []  # M = 14.78, SD = 5.09
+                                 pygame.DOUBLEBUF | pygame.FULLSCREEN)
+wait_time = 15000
 
 
 class Stimulus:
@@ -50,7 +47,6 @@ class Stimulus:
 
 class Input:
     """This class takes care of user input"""
-
     def __init__(self, surface):
         self.surface = surface
         self.x = surface.get_width() / 2
@@ -63,16 +59,14 @@ class Input:
         self.n_incorrect_words = 0
         self.prev_n_correct = 0
         self.prev_n_incorrect = 0
-        self.total_repeat_words = 0
         self.total_correct_words = 0
         self.total_incorrect_words = 0
-        self.n_repeat_words = 0
         self.font = pygame.font.Font(None, 50)
         self.font_feedback = pygame.font.Font(None, 40)
         self.font_counter = pygame.font.Font(None, 25)
+        self.running = True
 
     def draw_text_box(self, message):
-        """Draw text box"""
         pygame.draw.rect(self.surface, box_back_color,
                          ((self.x - (box_width / 2)), self.y,
                           box_width, box_height), 0)
@@ -111,6 +105,9 @@ class Input:
                     self.checker(string.join(self.current_string, ""),
                                  correct)
                     self.current_string = []
+                    if self.total_correct_words >= 30:
+                        self.running = False
+                        break
                 elif event.key <= 127:
                     self.current_string.append(chr(event.key))
             elif event.type == pygame.MOUSEBUTTONUP:
@@ -118,6 +115,7 @@ class Input:
                 self.prev_n_incorrect = self.n_incorrect_words
                 self.n_correct_words = 0
                 self.n_incorrect_words = 0
+                self.current_string = []
                 if self.x - (button_width / 2) <= event.pos[0] <= \
                    self.x + (button_width / 2) and \
                    self.y + 100 <= event.pos[1] <= self.y + 100 + \
@@ -129,18 +127,18 @@ class Input:
     def checker(self, word, cor_words):
         correct = cor_words
         word = word
+        # check whether this word has been entered earlier
         if word in self.past_correct_words:
             self.surface.blit(self.font_feedback.render("Dit woord heb je "
                                                         "al gehad",
                               1, incorrect_color),
                               (self.x - 160, self.y - 70))
-            self.n_repeat_words += 1
-            self.total_repeat_words += 1
             pygame.display.flip()
             pygame.time.delay(800)
             pygame.draw.rect(self.surface, (255, 255, 255),
                              ((self.x - 200), self.y - 80,
                               400, 60), 0)
+            # check whether this word is in the correct words list
         elif word in correct:
             self.surface.blit(self.font_feedback.render("Correct!",
                               1, correct_color),
@@ -153,6 +151,7 @@ class Input:
             pygame.draw.rect(self.surface, (255, 255, 255),
                              ((self.x - 200), self.y - 80,
                               400, 60), 0)
+            # else this is not a correct word
         else:
             self.surface.blit(self.font_feedback.render("Incorrect",
                               1, incorrect_color),
@@ -203,9 +202,9 @@ class Wait:
         text = self.font.render("We gaan nu nog een keer je eye blink rate meten",
                                 1, color_font)
         self.surface.blit(text, (self.x - 225, self.y - 15))
-        text = self.font.render("Roep de experimentleider erbij",
+        text = self.font.render("Druk op de spatiebalk om verder te gaan",
                                 1, color_font)
-        self.surface.blit(text, (self.x - 170, self.y + 50))
+        self.surface.blit(text, (self.x - 180, self.y + 50))
 
         pygame.display.flip()
         while True:
@@ -235,25 +234,22 @@ class Button:
 
 
 class Main:
-    def __init__(self, letters, words):
-        self.indicator = list(range(len(stimulus_set)))
-        random.shuffle(self.indicator)
-
+    def __init__(self, letters, words, subjectID, condition):
         # Init data collection
         self.start_time = timer()
-        print self.start_time
-        self.time_deltas = []
+        self.subjectID = subjectID
+        self.condition = condition
         self.total_correct_n = 0
         self.total_incorrect_n = 0
-        self.total_repeat_n = 0
         self.correct_input = []
         self.incorrect_input = []
         self.set_counter = -1
 
-        filename = "posttest.txt"
+        filename = str(self.subjectID) + "_scrabble_posttest" + ".txt"
         f = open(filename, 'w')
-        output = 'prepost,nth_set,letterset,timestamp,time_in_set,correct_n,' \
-                 'correct_words,incorrect_n,incorrect_words\n'
+        output = 'subjectID,condition,nth_set,letterset,time_start,time_end,' \
+                 'time_in_set,correct_n,correct_words,incorrect_n,' \
+                 'incorrect_words\n'
         f.write(output)
         f.close()
 
@@ -265,6 +261,8 @@ class Main:
         self.word = words
 
         # Initiate objects
+        self.indicator = list(range(len(stimulus_set)))
+        random.shuffle(self.indicator)
         self.stimulus = Stimulus(screen)
         self.user_input = Input(screen)
         self.wait = Wait(screen)
@@ -272,25 +270,22 @@ class Main:
 
     def main(self):
         # Main loop
-        image_intro = pygame.image.load(os.path.join("images", "intro_posttest.jpg")).convert()
-        self.wait.intro(image_intro)
+        clock = pygame.time.Clock()
+        image_intro01 = pygame.image.load(os.path.join("images", "intro_scrabble_posttest01.jpg")).convert()
+        image_intro02 = pygame.image.load(os.path.join("images", "intro_scrabble_pretest02.jpg")).convert()
+        self.wait.intro(image_intro01)
+        self.wait.intro(image_intro02)
 
         for number in self.indicator:
             """Loop through letter sets and check input until next set
             button is clicked. Repeat until last set has been shown"""
             self.begin = timer()
-
             self.set_counter += 1
             self.stimulus.draw_letterset(self.letters[number])
             self.button.next_set()
 
-            self.user_input.draw_input(correct_words[number])  # Input new letter set
-
-            # self.total_correct_n += self.user_input.n_correct_words
-            # self.total_incorrect_n += self.user_input.n_incorrect_words
-
+            self.user_input.draw_input(correct_words[number])
             self.correct_input.append(self.user_input.past_correct_words)
-            print self.correct_input
             self.incorrect_input.append(self.user_input.past_incorrect_words)
             self.time = (timer() - self.begin)
             self.write_data(number)
@@ -300,21 +295,28 @@ class Main:
             self.user_input.past_correct_words = []
             self.user_input.past_incorrect_words = []
 
-
-            if self.set_counter + 1 == len(self.indicator):  # Check if this was the final set
+            if not self.user_input.running:
+                self.wait.outro()
+                return
+            elif self.set_counter + 1 == len(self.indicator):  # Check if this was the final set
                 self.wait.outro()
             else:
-                self.wait.waiter(time=1000)
+                self.wait.waiter(time=wait_time)
 
         screen.fill(background_color)
+        clock.tick(fps)
 
     def write_data(self, number, filename=None):
         if filename is None:
-            filename = "posttest.txt"
+            filename = str(self.subjectID) + "_scrabble_posttest" + ".txt"
         f = open(filename, 'a')
-        output = "posttest" + ","  + str(self.set_counter) + ","+ \
+        output = str(self.subjectID) + "," + \
+                 self.condition + "," + \
+                 str(self.set_counter + 1) + "," + \
                  str(self.letters[number]) + "," + \
-                 str(self.start_time) + "," + str(self.time) + "," + \
+                 str(self.start_time) + "," + \
+                 str(timer()) + "," + \
+                 str(self.time) + "," + \
                  str(self.user_input.prev_n_correct) + "," + \
                  str(self.correct_input[self.set_counter]) + "," + \
                  str(self.user_input.prev_n_incorrect) + "," + \
@@ -322,8 +324,13 @@ class Main:
         f.write(output)
         f.close()
 
-
 if __name__ == '__main__':
+    subject_ID = sys.argv[1]
+    if sys.argv[2] == "r":
+        condition = random.choice(("c", "d"))
+    else:
+        condition = sys.argv[2]
+
     # Read letter set file
     stimulus_set = []
     with open('lettersets_posttest.csv', 'rb') as csvfile:
@@ -340,5 +347,5 @@ if __name__ == '__main__':
     for i in range(len(correct_words)):
         correct_words[i] = correct_words[i].split(',')
 
-    run = Main(stimulus_set, correct_words)
+    run = Main(stimulus_set, correct_words, subject_ID, condition)
     run.main()
